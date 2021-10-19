@@ -1,65 +1,34 @@
 import React from "react";
+import Airtable from "airtable";
 import TodoList from "./TodoList";
 import AddTodoForm from "./AddTodoForm";
 // import useSemiPersistentState from "./persistState";
 
-const getAsyncTodoList = () =>
-  new Promise((resolve, reject) =>
-    setTimeout(
-      () =>
-        resolve({
-          data: {
-            todoList: JSON.parse(localStorage.getItem("todoList")) || [],
-          },
-        }),
-      2000
-    )
-  );
-
-const [
-  todoListFetchInit,
-  todoListFetchSuccess,
-  todoListFetchFailure,
-  addTodoItem,
-  removeTodoItem,
-] = [
-  "TODOLIST_FETCH_INIT",
-  "TODOLIST_FETCH_SUCCESS",
-  "TODOLIST_FETCH_FAILURE",
-  "ADD_TODO_ITEM",
-  "REMOVE_TODO_ITEM",
-];
+const base = new Airtable({apiKey: "keyXJP6yokGZuPWld"}).base(
+  "appBckffqPRHb3f2J"
+);
 
 const todoListReducer = (state, action) => {
   switch (action.type) {
-    case todoListFetchInit:
+    case "TODOLIST_FETCH_INIT":
       return {
         ...state,
         isLoading: true,
         isError: false,
       };
-    case todoListFetchSuccess:
+    case "TODOLIST_FETCH_SUCCESS":
       return {
         ...state,
         isLoading: false,
         isError: false,
         data: action.payload,
       };
-    case todoListFetchFailure:
+    case "HTTP_REQUEST_FAILURE":
       return {
         ...state,
         isLoading: false,
         isError: true,
-      };
-    case addTodoItem:
-      return {
-        ...state,
-        data: [...state.data, action.payload],
-      };
-    case removeTodoItem:
-      return {
-        ...state,
-        data: state.data.filter((todo) => todo.id !== action.payload),
+        errMsg: action.payload,
       };
     default:
       throw new Error();
@@ -69,40 +38,65 @@ const todoListReducer = (state, action) => {
 const App = () => {
   const [todoList, dispatchTodoList] = React.useReducer(todoListReducer, {
     data: [],
-    isLoading: true,
+    isLoading: false,
     isError: false,
+    errMsg: {},
   });
 
-  React.useEffect(() => {
-    dispatchTodoList({type: todoListFetchInit});
-    getAsyncTodoList()
-      .then((result) => {
-        dispatchTodoList({
-          type: todoListFetchSuccess,
-          payload: result.data.todoList,
-        });
+  const fetchTodoList = () => {
+    dispatchTodoList({type: "TODOLIST_FETCH_INIT"});
+    base("Todo-List")
+      .select({
+        view: "Grid view",
       })
-      .catch(() => {
-        dispatchTodoList({type: todoListFetchFailure});
+      .firstPage((err, records) => {
+        if (err) {
+          dispatchTodoList({
+            type: "HTTP_REQUEST_FAILURE",
+            payload: err,
+          });
+          return;
+        }
+        dispatchTodoList({
+          type: "TODOLIST_FETCH_SUCCESS",
+          payload: records,
+        });
       });
+  };
+  React.useEffect(() => {
+    fetchTodoList();
   }, []);
 
-  React.useEffect(() => {
-    if (!todoList.isLoading)
-      localStorage.setItem("todoList", JSON.stringify(todoList.data));
-  }, [todoList]);
-
   const addTodo = (newTodo) => {
-    dispatchTodoList({
-      type: addTodoItem,
-      payload: newTodo,
-    });
+    base("Todo-List").create(
+      {
+        Title: newTodo,
+      },
+      (err, newRecord) => {
+        if (err) {
+          dispatchTodoList({
+            type: "HTTP_REQUEST_FAILURE",
+            payload: err,
+          });
+          return;
+        }
+        fetchTodoList();
+        console.log(`Successfully added: ${newRecord}`);
+      }
+    );
   };
 
   const removeTodo = (id) => {
-    dispatchTodoList({
-      type: removeTodoItem,
-      payload: id,
+    base("Todo-List").destroy([id], (err, deletedRecord) => {
+      if (err) {
+        dispatchTodoList({
+          type: "HTTP_REQUEST_FAILURE",
+          payload: err,
+        });
+        return;
+      }
+      fetchTodoList();
+      console.log(`Successfully deleted: ${deletedRecord}`);
     });
   };
 
@@ -110,7 +104,12 @@ const App = () => {
     <div>
       <h1>Todo List</h1>
       <AddTodoForm onAddTodo={addTodo} />
-      {todoList.isError && <p>Something went wrong ...</p>}
+      {todoList.isError && (
+        <p>
+          <strong>THAT DID NOT WORK:</strong>&nbsp;
+          {todoList.errMsg.error}--{todoList.errMsg.message}
+        </p>
+      )}
       {todoList.isLoading ? (
         <p>Loading ...</p>
       ) : (
