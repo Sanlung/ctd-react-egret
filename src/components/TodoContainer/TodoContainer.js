@@ -44,6 +44,7 @@ const TodoContainer = ({
           )}
         </span>
       </h2>
+      <AddTodoForm listName={children} onAddTodo={onAddTodo} />
       {fetchStatus.isError && (
         <p>
           <strong>SOMETHING WENT WRONG:</strong>&nbsp;
@@ -59,7 +60,6 @@ const TodoContainer = ({
           onRemoveTodo={onRemoveTodo}
         />
       )}
-      <AddTodoForm listName={children} onAddTodo={onAddTodo} />
     </div>
   );
 };

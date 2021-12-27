@@ -4,11 +4,35 @@ CSS for TodoContainer.js
 
 .listWrapper {
   width: 100%;
+  padding: 6rem 0;
 }
 
-.listWrapper > *:not(:first-child) {
+.listWrapper > :nth-child(2) {
+  padding-bottom: 6rem;
+}
+
+.todoForm {
+  padding-bottom: 6rem;
+  border-bottom: 1px solid rgb(90, 90, 90);
+}
+
+.todoLabel,
+.todoInput {
+  margin-right: 1rem;
+}
+
+.todoInput {
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  line-height: 2rem;
+  width: 25rem;
+  background-color: transparent;
+  border-bottom: 1px solid rgb(90, 90, 90);
+}
+
+.todoList {
   padding-top: 6rem;
-  margin-bottom: 6rem;
 }
 
 .todoItem:not(:last-child) {
@@ -40,7 +64,7 @@ CSS for TodoContainer.js
 
 .homeButton {
   float: right;
-  margin-top: 6rem;
+  /* margin-top: 6rem; */
   padding: 0 0.5rem;
   border-radius: 3px;
   color: rgb(180, 180, 180);
@@ -91,25 +115,6 @@ CSS for TodoContainer.js
 
 .sortButton:active {
   transform: scale(1);
-}
-
-.todoForm {
-  border-top: 1px solid rgb(90, 90, 90);
-}
-
-.todoLabel,
-.todoInput {
-  margin-right: 1rem;
-}
-
-.todoInput {
-  border: none;
-  color: inherit;
-  font-size: inherit;
-  line-height: 2rem;
-  width: 25rem;
-  background-color: transparent;
-  border-bottom: 1px solid rgb(90, 90, 90);
 }
 
 @media only screen and (max-width: 25em) {
